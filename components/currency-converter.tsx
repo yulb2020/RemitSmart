@@ -72,16 +72,33 @@ export function CurrencyConverter() {
     return () => controller.abort();
   }, [fromCurrency]);
 
-  const formatNumber = (num: number) => {
+  const formatNumber = (num: number, fixedDecimals = false) => {
     return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 0,
+      minimumFractionDigits: fixedDecimals ? 2 : 0,
       maximumFractionDigits: 2,
     }).format(num);
   };
 
   const handleAmountChange = (value: string) => {
-    const digitsOnly = value.replace(/\D/g, '').slice(0, 20);
-    setAmountInput(digitsOnly);
+    let hasDecimalPoint = false;
+    let digitCount = 0;
+    let sanitized = '';
+
+    for (const char of value) {
+      if (/\d/.test(char)) {
+        if (digitCount >= 20) continue;
+        sanitized += char;
+        digitCount += 1;
+        continue;
+      }
+
+      if (char === '.' && !hasDecimalPoint) {
+        sanitized += char;
+        hasDecimalPoint = true;
+      }
+    }
+
+    setAmountInput(sanitized);
   };
 
   const getAdaptiveAmountClass = (value: string) => {
@@ -91,7 +108,7 @@ export function CurrencyConverter() {
     return 'text-4xl';
   };
 
-  const convertedAmountText = convertedAmount === null ? '' : formatNumber(convertedAmount);
+  const convertedAmountText = convertedAmount === null ? '' : formatNumber(convertedAmount, true);
 
   const formatUpdateTime = () => {
     if (ratesData?.timeLastUpdateUnix) {
@@ -134,9 +151,9 @@ export function CurrencyConverter() {
           <div className="flex-1 min-w-0 text-right">
             <input
               type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={20}
+              inputMode="decimal"
+              pattern="[0-9]*[.]?[0-9]*"
+              maxLength={21}
               value={amountInput}
               onChange={(e) => handleAmountChange(e.target.value)}
               className={`w-full min-w-0 font-bold text-[#0F5132] text-right bg-transparent border-none outline-none tabular-nums ${getAdaptiveAmountClass(amountInput)}`}
@@ -188,7 +205,7 @@ export function CurrencyConverter() {
         <div className="mt-4 pt-4 border-t border-white/20">
           <p className="text-white/80 text-sm">
             {t.rate}: 1 {fromCurrency} ={' '}
-            {isLoadingRates ? '...' : exchangeRate === null ? '--' : formatNumber(exchangeRate)} {toCurrency}
+            {isLoadingRates ? '...' : exchangeRate === null ? '--' : formatNumber(exchangeRate, true)} {toCurrency}
           </p>
           {lastUpdated && !rateError && (
             <p className="text-white/60 text-xs mt-1">
