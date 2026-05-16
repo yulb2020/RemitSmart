@@ -8,7 +8,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 
@@ -25,7 +24,7 @@ export function CurrencyConverter() {
   const { t, dir } = useLanguage();
   const [fromCurrency, setFromCurrency] = useState('AED');
   const [toCurrency, setToCurrency] = useState('PKR');
-  const [amount, setAmount] = useState(1000);
+  const [amountInput, setAmountInput] = useState('1000');
   const [ratesData, setRatesData] = useState<ExchangeRatesResponse | null>(null);
   const [isLoadingRates, setIsLoadingRates] = useState(true);
   const [rateError, setRateError] = useState<string | null>(null);
@@ -33,6 +32,7 @@ export function CurrencyConverter() {
   const fromCurrencyData = getCurrencyByCode(fromCurrency);
   const toCurrencyData = getCurrencyByCode(toCurrency);
   const exchangeRate = ratesData?.rates[toCurrency] ?? null;
+  const amount = amountInput === '' ? 0 : Number(amountInput);
   const convertedAmount = exchangeRate === null ? null : amount * exchangeRate;
 
   useEffect(() => {
@@ -79,6 +79,20 @@ export function CurrencyConverter() {
     }).format(num);
   };
 
+  const handleAmountChange = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 20);
+    setAmountInput(digitsOnly);
+  };
+
+  const getAdaptiveAmountClass = (value: string) => {
+    if (value.length > 18) return 'text-xl sm:text-2xl';
+    if (value.length > 14) return 'text-2xl sm:text-3xl';
+    if (value.length > 10) return 'text-3xl';
+    return 'text-4xl';
+  };
+
+  const convertedAmountText = convertedAmount === null ? '' : formatNumber(convertedAmount);
+
   const formatUpdateTime = () => {
     if (ratesData?.timeLastUpdateUnix) {
       return new Intl.DateTimeFormat('en-US', {
@@ -102,9 +116,9 @@ export function CurrencyConverter() {
         <div className="flex items-center gap-4">
           {/* Flag and Currency Selector */}
           <Select value={fromCurrency} onValueChange={setFromCurrency}>
-            <SelectTrigger className="w-auto border-none shadow-none p-0 h-auto bg-transparent gap-2">
-              <span className="text-5xl">{fromCurrencyData?.flag}</span>
-              <SelectValue />
+            <SelectTrigger className="w-auto min-w-[9rem] border-none shadow-none p-0 h-auto bg-transparent gap-3">
+              <span className="text-5xl shrink-0">{fromCurrencyData?.flag}</span>
+              <span className="font-bold text-xl text-[#0F5132]">{fromCurrency}</span>
             </SelectTrigger>
             <SelectContent>
               {currencies.map((currency) => (
@@ -117,12 +131,15 @@ export function CurrencyConverter() {
           </Select>
 
           {/* Amount Input */}
-          <div className="flex-1 text-right">
+          <div className="flex-1 min-w-0 text-right">
             <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value) || 0)}
-              className="w-full text-4xl font-bold text-[#0F5132] text-right bg-transparent border-none outline-none"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={20}
+              value={amountInput}
+              onChange={(e) => handleAmountChange(e.target.value)}
+              className={`w-full min-w-0 font-bold text-[#0F5132] text-right bg-transparent border-none outline-none tabular-nums ${getAdaptiveAmountClass(amountInput)}`}
               placeholder="0"
             />
             <p className="text-2xl font-bold text-[#0F5132] mt-1">{fromCurrency}</p>
@@ -144,9 +161,9 @@ export function CurrencyConverter() {
         <div className="flex items-center gap-4">
           {/* Flag and Currency Selector */}
           <Select value={toCurrency} onValueChange={setToCurrency}>
-            <SelectTrigger className="w-auto border-none shadow-none p-0 h-auto bg-transparent gap-2 text-white [&_svg]:text-white">
-              <span className="text-5xl">{toCurrencyData?.flag}</span>
-              <SelectValue />
+            <SelectTrigger className="w-auto min-w-[9rem] border-none shadow-none p-0 h-auto bg-transparent gap-3 text-white [&_svg]:text-white">
+              <span className="text-5xl shrink-0">{toCurrencyData?.flag}</span>
+              <span className="font-bold text-xl text-white">{toCurrency}</span>
             </SelectTrigger>
             <SelectContent>
               {currencies.map((currency) => (
@@ -159,9 +176,9 @@ export function CurrencyConverter() {
           </Select>
 
           {/* Converted Amount Display */}
-          <div className="flex-1 text-right">
-            <p className="text-4xl font-bold text-[#22C55E]">
-              {isLoadingRates ? '...' : convertedAmount === null ? '--' : formatNumber(convertedAmount)}
+          <div className="flex-1 min-w-0 text-right">
+            <p className={`max-w-full overflow-hidden text-ellipsis whitespace-nowrap font-bold text-[#22C55E] tabular-nums ${getAdaptiveAmountClass(convertedAmountText)}`}>
+              {isLoadingRates ? '...' : convertedAmount === null ? '--' : convertedAmountText}
             </p>
             <p className="text-2xl font-bold text-white mt-1">{toCurrency}</p>
           </div>
