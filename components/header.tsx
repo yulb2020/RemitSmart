@@ -11,7 +11,10 @@ export function Header() {
           <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center">
             <span className="text-[#0F5132] font-bold text-lg">R</span>
           </div>
-          <span className="text-xl font-bold">RemitSmart</span>
+          <span className="text-xl font-bold">
+            <span className="text-white">Remit</span>
+            <span className="text-[#F59E0B]">Smart</span>
+          </span>
         </div>
 
         {/* Language Selector */}
